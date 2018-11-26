@@ -1,0 +1,92 @@
+#! groovy
+
+/ *
+A licença MIT
+Copyright (c) 2015 -, CloudBees, Inc. e vários outros colaboradores
+É concedida permissão, gratuitamente, a qualquer pessoa que obtenha uma cópia
+deste software e dos arquivos de documentação associados (o "Software"), para lidar
+Software sem restrições, incluindo, sem limitação, os direitos
+usar, copiar, modificar, mesclar, publicar, distribuir, sublicenciar e / ou vender
+cópias do Software e para permitir que pessoas a quem o Software esteja
+fornecido para tal, sujeito às seguintes condições:
+O aviso de copyright acima e este aviso de permissão devem ser incluídos
+todas as cópias ou partes substanciais do Software.
+        O SOFTWARE É FORNECIDO "COMO ESTÁ", SEM GARANTIA DE QUALQUER TIPO, EXPRESSA OU
+IMPLÍCITA, INCLUINDO, MAS NÃO SE LIMITANDO ÀS GARANTIAS DE COMERCIALIZAÇÃO,
+APTIDÃO PARA UMA FINALIDADE ESPECÍFICA E NÃO VIOLAÇÃO. EM NENHUMA CIRCUNSTÂNCIA
+AUTORES OU DETENTORES DOS DIREITOS AUTORAIS SERÃO RESPONSABILIZADOS POR QUALQUER RECLAMAÇÃO, DANOS OU OUTRAS
+RESPONSABILIDADE, SEJA EM AÇÃO DE CONTRATO, DELITO OU OUTRO, DECORRENTE DE,
+FORA OU EM CONEXÃO COM O SOFTWARE OU O USO OU OUTRAS CONCESSÕES
+O SOFTWARE.
+* /
+
+node ( ' node ' ) {
+
+
+    currentBuild . result =  " SUCESSO "
+
+    try {
+
+       estágio ( ' Checkout ' ) {
+
+          checkout scm
+       }
+
+       stage ( ' Test ' ) {
+
+         env . NODE_ENV  =  " teste "
+
+         print  "O ambiente será: $ { env.NODE_ENV } "
+
+         sh ' node -v '
+         sh ' npm prune '
+         sh ' npm install '
+         sh ' teste npm '
+
+       }
+
+       stage ( ' Build Docker ' ) {
+
+            sh ' ./dockerBuild.sh '
+       }
+
+       stage ( ' Deploy ' ) {
+
+         eco ' Push to Repo '
+         sh ' ./dockerPushToRepo.sh '
+
+         echo ' ssh para servidor web e diga para puxar nova imagem '
+         sh ' ssh deploy@xxxxx.xxxxx.com executando / xxxxxxx / dockerRun.sh '
+
+       }
+
+       stage ( ' Limpeza ' ) {
+
+         eco ' ameixa e limpeza '
+         sh ' npm prune '
+         sh ' rm node_modules -rf '
+
+corpo de          correio : ' projeto construir bem sucedido ' ,
+                     de : ' xxxx@yyyyy.com ' ,
+                     replyTo : ' xxxx@yyyy.com ' ,
+                     assunto : ' projeto construir bem sucedido ' ,
+                     para : ' yyyyy@yyyy.com '
+       }
+
+
+
+    }
+    pegar (err) {
+
+        currentBuild . result =  " FALHA "
+
+corpo do             email : "o erro de criação do projeto está aqui: $ { env.BUILD_URL } " ,
+            de : ' xxxx@yyyy.com ' ,
+            replyTo : ' yyyy@yyyy.com ' ,
+            subject : ' project build failed ' ,
+            para : ' zzzz@yyyyy.com '
+
+        jogar errar
+    }
+
+}
