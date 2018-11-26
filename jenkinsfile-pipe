@@ -1,92 +1,96 @@
-#! groovy
+#!groovy
 
-/ *
-A licença MIT
-Copyright (c) 2015 -, CloudBees, Inc. e vários outros colaboradores
-É concedida permissão, gratuitamente, a qualquer pessoa que obtenha uma cópia
-deste software e dos arquivos de documentação associados (o "Software"), para lidar
-Software sem restrições, incluindo, sem limitação, os direitos
-usar, copiar, modificar, mesclar, publicar, distribuir, sublicenciar e / ou vender
-cópias do Software e para permitir que pessoas a quem o Software esteja
-fornecido para tal, sujeito às seguintes condições:
-O aviso de copyright acima e este aviso de permissão devem ser incluídos
-todas as cópias ou partes substanciais do Software.
-        O SOFTWARE É FORNECIDO "COMO ESTÁ", SEM GARANTIA DE QUALQUER TIPO, EXPRESSA OU
-IMPLÍCITA, INCLUINDO, MAS NÃO SE LIMITANDO ÀS GARANTIAS DE COMERCIALIZAÇÃO,
-APTIDÃO PARA UMA FINALIDADE ESPECÍFICA E NÃO VIOLAÇÃO. EM NENHUMA CIRCUNSTÂNCIA
-AUTORES OU DETENTORES DOS DIREITOS AUTORAIS SERÃO RESPONSABILIZADOS POR QUALQUER RECLAMAÇÃO, DANOS OU OUTRAS
-RESPONSABILIDADE, SEJA EM AÇÃO DE CONTRATO, DELITO OU OUTRO, DECORRENTE DE,
-FORA OU EM CONEXÃO COM O SOFTWARE OU O USO OU OUTRAS CONCESSÕES
-O SOFTWARE.
-* /
+/*
+The MIT License
 
-node ( ' node ' ) {
+Copyright (c) 2015-, CloudBees, Inc., and a number of other of contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
+
+node('node') {
 
 
-    currentBuild . result =  " SUCESSO "
+    currentBuild.result = "SUCCESS"
 
     try {
 
-       estágio ( ' Checkout ' ) {
+       stage('Checkout'){
 
           checkout scm
        }
 
-       stage ( ' Test ' ) {
+       stage('Test'){
 
-         env . NODE_ENV  =  " teste "
+         env.NODE_ENV = "test"
 
-         print  "O ambiente será: $ { env.NODE_ENV } "
+         print "Environment will be : ${env.NODE_ENV}"
 
-         sh ' node -v '
-         sh ' npm prune '
-         sh ' npm install '
-         sh ' teste npm '
-
-       }
-
-       stage ( ' Build Docker ' ) {
-
-            sh ' ./dockerBuild.sh '
-       }
-
-       stage ( ' Deploy ' ) {
-
-         eco ' Push to Repo '
-         sh ' ./dockerPushToRepo.sh '
-
-         echo ' ssh para servidor web e diga para puxar nova imagem '
-         sh ' ssh deploy@xxxxx.xxxxx.com executando / xxxxxxx / dockerRun.sh '
+         sh 'node -v'
+         sh 'npm prune'
+         sh 'npm install'
+         sh 'npm test'
 
        }
 
-       stage ( ' Limpeza ' ) {
+       stage('Build Docker'){
 
-         eco ' ameixa e limpeza '
-         sh ' npm prune '
-         sh ' rm node_modules -rf '
+            sh './dockerBuild.sh'
+       }
 
-corpo de          correio : ' projeto construir bem sucedido ' ,
-                     de : ' xxxx@yyyyy.com ' ,
-                     replyTo : ' xxxx@yyyy.com ' ,
-                     assunto : ' projeto construir bem sucedido ' ,
-                     para : ' yyyyy@yyyy.com '
+       stage('Deploy'){
+
+         echo 'Push to Repo'
+         sh './dockerPushToRepo.sh'
+
+         echo 'ssh to web server and tell it to pull new image'
+         sh 'ssh deploy@xxxxx.xxxxx.com running/xxxxxxx/dockerRun.sh'
+
+       }
+
+       stage('Cleanup'){
+
+         echo 'prune and cleanup'
+         sh 'npm prune'
+         sh 'rm node_modules -rf'
+
+         mail body: 'project build successful',
+                     from: 'xxxx@yyyyy.com',
+                     replyTo: 'xxxx@yyyy.com',
+                     subject: 'project build successful',
+                     to: 'yyyyy@yyyy.com'
        }
 
 
 
     }
-    pegar (err) {
+    catch (err) {
 
-        currentBuild . result =  " FALHA "
+        currentBuild.result = "FAILURE"
 
-corpo do             email : "o erro de criação do projeto está aqui: $ { env.BUILD_URL } " ,
-            de : ' xxxx@yyyy.com ' ,
-            replyTo : ' yyyy@yyyy.com ' ,
-            subject : ' project build failed ' ,
-            para : ' zzzz@yyyyy.com '
+            mail body: "project build error is here: ${env.BUILD_URL}" ,
+            from: 'xxxx@yyyy.com',
+            replyTo: 'yyyy@yyyy.com',
+            subject: 'project build failed',
+            to: 'zzzz@yyyyy.com'
 
-        jogar errar
+        throw err
     }
 
 }
